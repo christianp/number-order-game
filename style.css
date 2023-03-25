@@ -1,0 +1,95 @@
+:root {
+    --spacing: 1em;
+    --bg-hue: 0;
+    --bg-lum: 80%;
+    
+    --timing: 1s;
+}
+
+html {
+    font-size: 20px;
+}
+
+body {
+    font-family: sans-serif;
+    background-color: hsl(var(--bg-hue),80%,var(--bg-lum));
+    color: black;
+    transition: background-color var(--timing);
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        --bg-lum: 15%;
+        color: white;
+    }
+}
+
+header {
+    text-align: center;
+}
+
+main {
+    display: grid;
+    grid-template:
+        "numbers status"
+        "stats stats"
+        /
+        1fr 1fr
+    ;
+    align-items: center;
+    justify-items: center;
+    grid-gap: var(--spacing);
+}
+@media (orientation: portrait) {
+    main {
+        grid-template:
+            "status"
+            "numbers"
+            "stats"
+         ;
+            
+    }
+}
+
+#status {
+    grid-area: status;
+}
+
+#numbers {
+    grid-area: numbers;
+    list-style: lower-latin;
+    padding: 0;
+}
+
+#numbers li {
+    margin: var(--spacing) 0;
+}
+
+#current-number {
+    font-size: 4rem;
+}
+
+#numbers li {
+    width: 5em;
+    text-align: center;
+}
+
+.place-number {
+    width: 5em;
+}
+
+#stats {
+    grid-area: stats;
+    display: flex;
+    grid-gap: var(--spacing);
+    justify-content: space-around;
+    width: 100%;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat .number {
+    display: inline-block;
+}
