@@ -2,8 +2,13 @@
     --spacing: 1em;
     --bg-hue: 0;
     --bg-lum: 80%;
+    --button-lum: 65%;
     
     --timing: 1s;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 html {
@@ -17,9 +22,16 @@ body {
     transition: background-color var(--timing);
 }
 
+@media (prefers-reduced-motion) {
+    :root {
+        --timing: 0s;
+    }
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         --bg-lum: 15%;
+        --button-lum: 30%;
         color: white;
     }
 }
@@ -31,51 +43,92 @@ header {
 main {
     display: grid;
     grid-template:
-        "numbers status"
-        "stats stats"
-        /
-        1fr 1fr
-    ;
+        "numbers status" "stats stats" / 20em 20em;
     align-items: center;
     justify-items: center;
     grid-gap: var(--spacing);
+    justify-content: center;
 }
-@media (orientation: portrait) {
-    main {
-        grid-template:
-            "status"
-            "numbers"
-            "stats"
-         ;
-            
-    }
+
+footer {
+    margin-top: calc(5 * var(--spacing));
+    text-align: center;
+}
+
+a {
+    color: inherit;
 }
 
 #status {
     grid-area: status;
+    text-align: center;
+    align-self: center;
 }
 
 #numbers {
     grid-area: numbers;
-    list-style: lower-latin;
+    list-style: none;
     padding: 0;
+    margin: 0;
+    width: 100%;
 }
-
-#numbers li {
-    margin: var(--spacing) 0;
+#numbers li:first-child {
+    list-style: 'smallest';
+}
+#numbers li:last-child {
+    list-style: 'biggest';
 }
 
 #current-number {
     font-size: 4rem;
+    margin: 0;
 }
 
 #numbers li {
-    width: 5em;
+    margin: var(--spacing) 0;
     text-align: center;
+    padding-left: var(--spacing);
+    height: 1.6em;
+}
+
+#numbers li .static {
+  padding: 0.2em 0;
+  display: block;
+  min-width: 5em;
 }
 
 .place-number {
-    width: 5em;
+    width: 100%;
+    min-width: 5em;
+    font-size: 1em;
+}
+
+button {
+    --bg-sat: 80%;
+    background-color: hsl(calc(360 - var(--bg-hue)), var(--bg-sat), var(--button-lum));
+    border: medium solid currentColor;
+    color: inherit;
+    font-size: inherit;
+}
+button:is(:hover, :focus) {
+    --bg-sat: 50%;
+}
+button:active {
+    --bg-sat: 30%;
+}
+
+#restart-button {
+    padding: var(--spacing);
+}
+
+
+#status-text {
+  font-weight: bold;
+}
+
+.failed #status-text {
+  font-style: italic;
+  margin: var(--spacing) 0;
 }
 
 #stats {
@@ -93,3 +146,15 @@ main {
 .stat .number {
     display: inline-block;
 }
+@media (orientation: portrait) {
+    main {
+        grid-template:
+            "status" 6em "numbers" "stats";
+            
+    }
+    
+    #numbers {
+        width: revert;
+    }
+}
+

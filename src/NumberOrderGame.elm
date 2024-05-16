@@ -55,7 +55,7 @@ main = Browser.document
     }
 
 pick_bg_hue : Random.Generator Float
-pick_bg_hue = Random.float 0 360
+pick_bg_hue = Random.float 90 270
 
 random_game : Int -> Random.Generator Game
 random_game n = Random.List.choices n (List.range 100 999) |> Random.map first |> Random.map2 new_game pick_bg_hue
@@ -92,41 +92,48 @@ init_model =
 
 nocmd model = (model, Cmd.none)
 
-update msg model = case (Debug.log "msg" msg) of
+update msg model = case msg of
     SetGame game -> ({ model | game = game }, setCSSVariable ("bg-hue", ff game.bg_hue))
 
     PlaceNumber i -> case (List.head model.game.numbers, listGet i model.game.choices) of
         (Just n, Just Nothing) -> 
             let
                 game = model.game
+
                 ngame = { game | numbers = List.drop 1 game.numbers, used_numbers = List.concat [game.used_numbers, List.take 1 game.numbers], choices = listSet i (Just n) game.choices, turn = game.turn + 1 }
+
+                complete = ngame.numbers == []
+
+                all_correct = correct_order ngame
+
+                correctly_placed = List.map2 (==) (List.map Just (List.sort ngame.used_numbers)) ngame.choices |> List.filter identity |> List.length
+
+                stats = model.stats
+
+                nstats = 
+                    if complete || not all_correct then
+                        { stats
+                        | won = stats.won + (if all_correct then 1 else 0)
+                        , correctly_placed = stats.correctly_placed + correctly_placed
+                        , incorrectly_placed = stats.incorrectly_placed + model.n - correctly_placed
+                        , played = stats.played + 1
+                        }
+                    else
+                        stats
             in
-                { model | game = ngame } |> nocmd
+                { model | game = ngame, stats = nstats } |> nocmd
 
         _ -> nocmd model
 
-    Restart -> 
-        let
-            game = model.game
-            stats = model.stats
-            failed = not (correct_order game)
-            correctly_placed = List.map2 (==) (List.map Just (List.sort game.used_numbers)) game.choices |> List.filter identity |> List.length
-            nstats : Stats
-            nstats = 
-                { stats 
-                | played = stats.played + 1
-                , won = stats.won + (if failed then 0 else 1)
-                , correctly_placed = stats.correctly_placed + correctly_placed
-                , incorrectly_placed = stats.incorrectly_placed + model.n - correctly_placed
-                }
-            nmodel = { model | stats = nstats }
-        in
-            (nmodel, generate_game nmodel)
+    Restart -> (model, generate_game model)
 
 subscriptions model = Sub.none
 
 correct_order : Game -> Bool
 correct_order game = List.filterMap identity game.choices |> (\l -> l == (List.sort l))
+
+text = H.text
+em s = H.em [] [text s]
 
 view model = 
     let
@@ -139,16 +146,18 @@ view model =
 
         view_choices = 
             let
+                static s = H.span [ HA.class "static" ] [ H.text s ]
                 view_choice i c = case c of
-                    Just n -> H.text <| fi n
+                    Just n -> static <| fi n
 
                     Nothing -> 
                         if failed then
-                            H.text "-"
+                            static "-"
                         else
                             H.button
                                 [ HE.onClick (PlaceNumber i) 
                                 , HA.class "place-number"
+                                , HA.attribute "aria-label" <| "Position "++(fi (i+1))
                                 ]
                                 [ H.text "-" ]
             in
@@ -175,7 +184,7 @@ view model =
                     <|
 
                     if failed || complete then
-                            [ H.p [] [ H.text <| if correct_order game then "You did it!" else "Nope, not this time." ]
+                            [ H.p [ HA.id "status-text" ] [ H.text <| if correct_order game then "You did it!" else "Nope, not this time." ]
                             , H.button
                                 [ HA.type_ "button"
                                 , HE.onClick Restart
@@ -209,12 +218,25 @@ view model =
         , body =
             [ H.header
                 []
-                [ H.h1 [] [ H.text "Order those numbers!" ] ]
+                [ H.h1 [] [text "Order those numbers!" ]
+                , H.p [] [text "You'll be shown five numbers, between ", em "100", text " and ", em "999", text "." ]
+                , H.p [] [text "Try to guess what order the numbers will go in, from ", em "smallest", text " to ", em "biggest", text "." ]
+                ]
             , H.main_
                 []
                 [ view_choices
                 , view_status
                 , view_stats
+                ]
+            , H.footer
+                []
+                [ H.p
+                    []
+                    [ text "Made by "
+                    , H.a
+                        [ HA.href "https://somethingorotherwhatever.com" ]
+                        [ text "clp" ]
+                    ]
                 ]
             ]
         }
